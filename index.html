@@ -3,36 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Downloader</title>
+    <meta name="google-adsense-account" content="ca-pub-1127766383643929"> <!-- Add this line -->
+    <title>Web Video Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input, button {
+            margin-top: 10px;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        /* Add some styling for the ad unit */
+        .adsense-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Video Downloader</h1>
-    <form id="downloadForm">
-        <label for="url">Enter Video URL:</label>
-        <input type="text" id="url" name="url" placeholder="Paste video URL here" required>
-        <button type="submit">Download Video</button>
-    </form>
-    <div id="status"></div>
+    <h1>Web Video Checker</h1>
+    <p>Enter a URL to check for videos on the page.</p>
+    <input type="text" id="url" placeholder="Enter URL">
+    <button onclick="checkForVideos()">Check for Videos</button>
+
+    <div id="result"></div>
+
+    <!-- Google AdSense script -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1127766383643929"
+     crossorigin="anonymous"></script>
+
+    <!-- AdSense Ad Unit -->
+    <div class="adsense-container">
+        <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-1127766383643929"
+            data-ad-slot="1234567890"  <!-- Replace with your own AdSense slot -->
+            data-ad-format="auto"></ins>
+        <script>
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+    </div>
 
     <script>
-        document.getElementById('downloadForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const url = document.getElementById('url').value;
-
-            // Send URL to backend server for processing
-            const response = await fetch('/download', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
-
-            const statusDiv = document.getElementById('status');
-            if (response.ok) {
-                statusDiv.textContent = 'Download started! Check your downloads folder.';
-            } else {
-                statusDiv.textContent = 'Error: Unable to download video.';
+        async function checkForVideos() {
+            const url = document.getElementById("url").value.trim();
+            if (!url) {
+                alert("Please enter a URL");
+                return;
             }
-        });
+
+            // Display loading message
+            document.getElementById("result").innerHTML = "Checking...";
+
+            try {
+                // Fetch the page content
+                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                const html = data.contents;
+
+                // Create a temporary DOM element to parse the HTML
+                const doc = new DOMParser().parseFromString(html, "text/html");
+
+                // Check for <video> tags
+                const videoTags = doc.querySelectorAll("video");
+                const iframes = doc.querySelectorAll("iframe");
+
+                let videosFound = false;
+                let videoInfo = "";
+
+                // Check for <video> elements
+                if (videoTags.length > 0) {
+                    videosFound = true;
+                    videoInfo += `<h3>Videos Found (Direct video tags):</h3>`;
+                    videoTags.forEach((video, index) => {
+                        videoInfo += `<p>Video ${index + 1}: ${video.src || "No video source found"}</p>`;
+                    });
+                }
+
+                // Check for embedded videos (YouTube, Vimeo, etc.)
+                const videoEmbeds = Array.from(iframes).filter(iframe => {
+                    return iframe.src.includes("youtube") || iframe.src.includes("vimeo");
+                });
+
+                if (videoEmbeds.length > 0) {
+                    videosFound = true;
+                    videoInfo += `<h3>Embedded Videos (e.g., YouTube, Vimeo):</h3>`;
+                    videoEmbeds.forEach((iframe, index) => {
+                        videoInfo += `<p>Embed ${index + 1}: ${iframe.src}</p>`;
+                    });
+                }
+
+                if (videosFound) {
+                    document.getElementById("result").innerHTML = videoInfo;
+                } else {
+                    document.getElementById("result").innerHTML = "No videos found on this page.";
+                }
+            } catch (error) {
+                document.getElementById("result").innerHTML = "Error fetching or parsing the page.";
+                console.error("Error:", error);
+            }
+        }
     </script>
 </body>
 </html>
