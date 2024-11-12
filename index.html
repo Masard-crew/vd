@@ -3,52 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Video Downloader</title>
-    <script>
-        function downloadVideo() {
-            const videoUrl = document.getElementById("videoUrl").value;
-            if (videoUrl === "") {
-                alert("Please enter a video URL.");
-                return;
-            }
-
-            const data = JSON.stringify({ url: videoUrl });
-
-            fetch('https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-rapidapi-key': '6a2e9674fcmsh2d28d788dc01d32p1216e4jsnafc34b3e0228',  // Your API key
-                    'x-rapidapi-host': 'social-download-all-in-one.p.rapidapi.com'
-                },
-                body: data
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.downloadUrl) {
-                    document.getElementById("downloadLink").innerHTML = `
-                        <a href="${data.downloadUrl}" download>Download Video</a>
-                    `;
-                } else {
-                    alert("Failed to fetch video download link.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("An error occurred while fetching the video.");
-            });
-        }
-    </script>
+    <title>Video Downloader</title>
 </head>
 <body>
+    <h1>Video Downloader</h1>
+    <form id="downloadForm">
+        <label for="url">Enter Video URL:</label>
+        <input type="text" id="url" name="url" placeholder="Paste video URL here" required>
+        <button type="submit">Download Video</button>
+    </form>
+    <div id="status"></div>
 
-<h1>Universal Video Downloader</h1>
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const url = document.getElementById('url').value;
 
-<label for="videoUrl">Enter Video URL:</label>
-<input type="text" id="videoUrl" placeholder="Enter URL here" size="50">
-<button onclick="downloadVideo()">Download Video</button>
+            // Send URL to backend server for processing
+            const response = await fetch('/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
 
-<p id="downloadLink"></p>
-
+            const statusDiv = document.getElementById('status');
+            if (response.ok) {
+                statusDiv.textContent = 'Download started! Check your downloads folder.';
+            } else {
+                statusDiv.textContent = 'Error: Unable to download video.';
+            }
+        });
+    </script>
 </body>
 </html>
